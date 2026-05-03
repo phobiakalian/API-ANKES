@@ -1,4 +1,3 @@
-// src/routes.js
 const express = require('express');
 const router = express.Router();
 const { getDb, admin } = require('./db');
