@@ -1,29 +1,37 @@
-// src/logger.js - Structured logging dengan Pino
+// src/logger.js - Structured logging dengan Pino (serverless-safe version)
 const pino = require('pino');
 
+// Deteksi environment
+const isProduction = process.env.NODE_ENV === 'production';
+const isVercel = process.env.VERCEL === '1';
+
+// Hanya gunakan pretty print di local development
+const transportConfig = !isProduction && !isVercel
+  ? {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname'
+      }
+    }
+  : undefined; // Production: gunakan JSON logging (default)
+
 const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  // Pretty print untuk development
-  transport: process.env.NODE_ENV === 'development' || process.env.VERCEL 
-    ? { 
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname'
-        }
-      } 
-    : undefined,
-  // Formatters untuk konsistensi
+  level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
+  transport: transportConfig,
   formatters: {
     level: (label) => ({ level: label.toUpperCase() }),
   },
-  // Base fields untuk semua log
   base: {
     service: 'ankes-api',
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development'
-  }
+  },
+  // Optimasi untuk serverless: reduce overhead
+  timestamp: pino.stdTimeFunctions.isoTime,
+  messageKey: 'msg',
+  nestedKey: 'payload'
 });
 
 // Helper untuk log error dengan stack trace
