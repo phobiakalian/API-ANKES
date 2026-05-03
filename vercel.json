@@ -5,6 +5,7 @@
         "src": "api/index.js",
         "use": "@vercel/node",
         "config": {
+          "buildCommand": "bash vercel-build.sh",
           "maxDuration": 10
         }
       }
