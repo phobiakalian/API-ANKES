@@ -1,5 +1,5 @@
 {
-  "name": "@phobiakalian/ankes-api",
+  "name": "@phobiakalian/API-ANKES",
   "version": "1.0.0",
   "description": "Anti-spam API for Telegram groups - detects and blocks broadcast/gcast messages",
   "main": "src/index.js",
@@ -28,12 +28,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phobiakalian/ankes-api.git"
+    "url": "git+https://github.com/phobiakalian/API-ANKES.git"
   },
   "bugs": {
-    "url": "https://github.com/phobiakalian/ankes-api/issues"
+    "url": "https://github.com/phobiakalian/API-ANKES/issues"
   },
-  "homepage": "https://github.com/phobiakalian/ankes-api#readme",
+  "homepage": "https://github.com/phobiakalian/API-ANKES#readme",
   "engines": {
     "node": ">=16.0.0"
   },
