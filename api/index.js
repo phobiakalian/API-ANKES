@@ -92,9 +92,10 @@ app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
 
-// Error handler global
+// Error handler global (tangkap semua error unhandled)
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err.message);
+  console.error('Stack:', err.stack);
   res.status(500).json({ 
     error: process.env.NODE_ENV === 'production' ? "Internal server error" : err.message 
   });
@@ -102,5 +103,10 @@ app.use((err, req, res, next) => {
 
 // Export untuk Vercel serverless
 module.exports = async (req, res) => {
-  return app(req, res);
+  try {
+    return app(req, res);
+  } catch (error) {
+    console.error('Serverless handler error:', error.message);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
