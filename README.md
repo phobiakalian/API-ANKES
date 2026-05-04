@@ -33,7 +33,7 @@
 ```bash
 # 1. Clone repo
 git clone https://github.com/phobiakalian/API-ANKES.git
-cd ankes-api
+cd API-ANKES
 
 # 2. Install dependencies
 npm install

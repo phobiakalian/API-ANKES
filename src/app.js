@@ -1,4 +1,4 @@
-// src/app.js - Express app definition (reusable untuk local & Vercel)
+// src/app.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +9,10 @@ const { getDb } = require('./db');
 const logger = require('./logger');
 
 const app = express();
+
+// 🛡️ PENTING: Beritahu Express untuk mempercayai proxy dari Vercel
+// Ini wajib agar rate-limiter bisa membaca IP asli dengan benar
+app.set('trust proxy', 1); 
 
 // Inisialisasi Firebase (lazy load untuk Vercel)
 let dbInitialized = false;
@@ -25,14 +29,18 @@ async function ensureDb() {
   }
 }
 
-// Middleware keamanan & parsing
+// Middleware keamanan
 app.use(helmet());
+
 app.use(cors({ 
   origin: process.env.NODE_ENV === 'production' 
     ? (process.env.ALLOWED_ORIGINS?.split(',') || []) 
     : true 
 }));
+
 app.use(express.json({ limit: '1mb' }));
+
+// Rate Limit (Sekarang aman digunakan karena trust proxy sudah true)
 app.use(rateLimit({ 
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
@@ -102,7 +110,7 @@ app.get('/v1', (req, res) => {
       "GET /v1/blacklist/:group_id": "Get group blacklist",
       "GET /health": "Health check endpoint"
     },
-    docs: "https://github.com/yourusername/ankes-api",
+    docs: "https://github.com/phobiakalian/API-ANKES",
     license: "MIT"
   });
 });

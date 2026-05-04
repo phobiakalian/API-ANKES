@@ -23,7 +23,7 @@ const logger = pino({
     level: (label) => ({ level: label.toUpperCase() }),
   },
   base: {
-    service: 'ankes-api',
+    service: 'API-ANKES',
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   },
