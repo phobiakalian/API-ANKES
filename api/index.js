@@ -1,4 +1,4 @@
-// api/index.js - Vercel serverless entry (FINAL)
+// api/index.js - Vercel serverless entry (FINAL FIX)
 const express = require('express');
 const admin = require('firebase-admin');
 const cors = require('cors');
@@ -30,6 +30,7 @@ async function getDb() {
 const app = express();
 
 // 🛡️ PENTING: Trust proxy HARUS sebelum rate-limit!
+// Ini fix untuk error "X-Forwarded-For header is set but trust proxy is false"
 app.set('trust proxy', 1);
 
 // Middleware
@@ -50,17 +51,18 @@ app.use(rateLimit({
   legacyHeaders: false,
 }));
 
-// ✅ Import routes dari src/routes.js
+// ✅ Import routes dari src/routes.js (semua endpoint /v1/*)
 app.use('/v1', routes);
 
-// Health check (tanpa Firebase dependency)
+// Health check (tanpa Firebase dependency - selalu return 200)
 app.get('/health', (req, res) => {
   res.json({ 
     status: "ok", 
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     firestore: "lazy-loaded",
-    version: "1.0.0"
+    version: "1.0.0",
+    environment: process.env.NODE_ENV
   });
 });
 
@@ -73,12 +75,19 @@ app.get('/v1', (req, res) => {
       "GET /health": "Health check",
       "GET /v1": "API index",
       "POST /v1/analyze": "Analyze message",
-      // ... tambahkan endpoint lain sesuai src/routes.js
+      "POST /v1/config/:group_id": "Update config",
+      "GET /v1/stats/:group_id": "Get stats",
+      "GET /v1/summary/:group_id": "Get summary",
+      "POST /v1/whitelist/:group_id/:user_id": "Add to whitelist",
+      "DELETE /v1/whitelist/:group_id/:user_id": "Remove from whitelist",
+      "POST /v1/blacklist/:group_id": "Add to blacklist",
+      "DELETE /v1/blacklist/:group_id": "Remove from blacklist",
+      "GET /v1/blacklist/:group_id": "Get blacklist"
     }
   });
 });
 
-// 404 handler (PALING BAWAH)
+// 404 handler (PALING BAWAH - setelah semua routes)
 app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
@@ -91,7 +100,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Export untuk Vercel
+// Export untuk Vercel serverless
 module.exports = async (req, res) => {
   return app(req, res);
 };
