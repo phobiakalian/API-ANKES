@@ -2,12 +2,11 @@
 const { z } = require('zod');
 const logger = require('./logger');
 
-// Sanitize input untuk cegah injection & DoS
 const sanitizeInput = (str) => {
   if (typeof str !== 'string') return str;
   return str
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
-    .substring(0, 4000); // Max length untuk cegah DoS
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    .substring(0, 4000);
 };
 
 const verifyApiKey = (req, res, next) => {
@@ -41,7 +40,6 @@ const configSchema = z.object({
 });
 
 const validate = (schema) => (req, res, next) => {
-  // Sanitize input sebelum validate
   if (req.body?.text) req.body.text = sanitizeInput(req.body.text);
   if (req.body?.group_id) req.body.group_id = sanitizeInput(req.body.group_id);
   if (req.body?.user_id) req.body.user_id = sanitizeInput(req.body.user_id);

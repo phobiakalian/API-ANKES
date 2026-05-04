@@ -1,3 +1,4 @@
+// src/routes.js
 const express = require('express');
 const router = express.Router();
 const { getDb, admin } = require('./db');
@@ -7,9 +8,7 @@ const cache = require('./cache');
 const logger = require('./logger');
 const { withRetry } = require('./resilience');
 
-// ============================================================================
-// POST /v1/analyze - Analisis pesan masuk (Optimized + Resilient + Smart Logging)
-// ============================================================================
+// POST /v1/analyze
 router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) => {
   const startTime = Date.now();
   
@@ -17,7 +16,7 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
     const db = getDb();
     const { group_id, user_id, text } = req.validatedBody;
 
-    // 1. Cek whitelist dulu (Paling ringan, cegah proses berat)
+    // 1. Cek whitelist
     const whitelistDoc = await withRetry(
       () => db.collection('whitelist').doc(user_id).get(),
       'whitelist_check'
@@ -38,7 +37,6 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
     if (!config || !blacklist) {
       logger.debug({ group_id }, 'Cache miss - fetching from Firestore');
       
-      // Fetch dari Firestore secara paralel dengan retry
       const [configDoc, blacklistDoc] = await Promise.all([
         withRetry(() => db.collection('configs').doc(group_id).get(), 'config_fetch'),
         withRetry(() => db.collection('blacklists').doc(group_id).get(), 'blacklist_fetch')
@@ -47,7 +45,6 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
       config = configDoc.exists ? configDoc.data() : { threshold: 0.65, expert_mode: false };
       blacklist = blacklistDoc.exists ? (blacklistDoc.data().words || []) : [];
       
-      // Simpan ke cache untuk request berikutnya
       cache.set(configKey, config);
       cache.set(blacklistKey, blacklist);
     }
@@ -55,14 +52,13 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
     // 3. Jalankan deteksi
     const result = analyzeAsciiPattern(text, config.threshold, config.expert_mode, blacklist);
 
-    // 4. 🧠 SMART LOGGING: Hemat database!
+    // 4. SMART LOGGING
     const hasLink = result.reason?.includes('contains_link');
     const shouldLog = result.is_gcast || hasLink || Math.random() < 0.1;
 
     if (shouldLog) {
       const logText = text.length > 200 ? text.substring(0, 200) + '...' : text;
       
-      // Fire-and-forget: tidak blocking response utama
       db.collection('logs').add({
         group_id,
         user_id,
@@ -91,9 +87,7 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
   }
 });
 
-// ============================================================================
-// POST /v1/config/:group_id - Update konfigurasi grup
-// ============================================================================
+// POST /v1/config/:group_id
 router.post('/config/:group_id', verifyApiKey, validate(configSchema), async (req, res) => {
   try {
     const db = getDb();
@@ -109,7 +103,6 @@ router.post('/config/:group_id', verifyApiKey, validate(configSchema), async (re
       'config_update'
     );
     
-    // 🗑️ INVALIDATE CACHE agar perubahan langsung berlaku
     cache.del(`config:${req.params.group_id}`);
     
     logger.info({ group_id: req.params.group_id, update }, 'Config updated');
@@ -119,10 +112,6 @@ router.post('/config/:group_id', verifyApiKey, validate(configSchema), async (re
     res.status(500).json({ error: err.message });
   }
 });
-
-// ============================================================================
-// WHITELIST ENDPOINTS
-// ============================================================================
 
 // POST /v1/whitelist/:group_id/:user_id
 router.post('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) => {
@@ -165,24 +154,18 @@ router.delete('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) =>
   }
 });
 
-// ============================================================================
-// BLACKLIST ENDPOINTS
-// ============================================================================
-
-// POST /v1/blacklist/:group_id - Tambah kata ke blacklist
+// POST /v1/blacklist/:group_id
 router.post('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   try {
     const db = getDb();
     const { word } = req.body;
     
-    // Validasi input
     if (!word || typeof word !== 'string' || word.length < 2) {
       return res.status(400).json({ error: "Word must be at least 2 characters" });
     }
     
     const groupId = req.params.group_id;
     
-    // Gunakan arrayUnion agar kata unik & tidak duplikat
     await withRetry(
       () => db.collection('blacklists').doc(groupId).set({
         group_id: groupId,
@@ -192,7 +175,6 @@ router.post('/blacklist/:group_id', verifyApiKey, async (req, res) => {
       'blacklist_add'
     );
     
-    // 🗑️ INVALIDATE CACHE agar perubahan langsung berlaku
     cache.del(`blacklist:${groupId}`);
     
     logger.info({ group_id: groupId, word }, 'Word added to blacklist');
@@ -203,7 +185,7 @@ router.post('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   }
 });
 
-// DELETE /v1/blacklist/:group_id - Hapus kata dari blacklist
+// DELETE /v1/blacklist/:group_id
 router.delete('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   try {
     const db = getDb();
@@ -215,7 +197,6 @@ router.delete('/blacklist/:group_id', verifyApiKey, async (req, res) => {
     
     const groupId = req.params.group_id;
     
-    // Gunakan arrayRemove untuk menghapus dari array
     await withRetry(
       () => db.collection('blacklists').doc(groupId).update({
         words: admin.firestore.FieldValue.arrayRemove(word.toLowerCase()),
@@ -224,7 +205,6 @@ router.delete('/blacklist/:group_id', verifyApiKey, async (req, res) => {
       'blacklist_delete'
     );
     
-    // 🗑️ INVALIDATE CACHE
     cache.del(`blacklist:${groupId}`);
     
     logger.info({ group_id: groupId, word }, 'Word removed from blacklist');
@@ -235,7 +215,7 @@ router.delete('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   }
 });
 
-// GET /v1/blacklist/:group_id - Lihat daftar blacklist
+// GET /v1/blacklist/:group_id
 router.get('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   try {
     const db = getDb();
@@ -259,15 +239,12 @@ router.get('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   }
 });
 
-// ============================================================================
-// GET /v1/summary/:group_id - Lightweight group summary (NEW)
-// ============================================================================
+// GET /v1/summary/:group_id
 router.get('/summary/:group_id', verifyApiKey, async (req, res) => {
   try {
     const db = getDb();
     const groupId = req.params.group_id;
     
-    // Ambil config dari cache atau DB
     const configKey = `config:${groupId}`;
     let config = cache.get(configKey);
     
@@ -280,7 +257,6 @@ router.get('/summary/:group_id', verifyApiKey, async (req, res) => {
       cache.set(configKey, config);
     }
     
-    // Ambil blacklist count (cached)
     const blacklistKey = `blacklist:${groupId}`;
     let blacklist = cache.get(blacklistKey);
     
@@ -307,9 +283,7 @@ router.get('/summary/:group_id', verifyApiKey, async (req, res) => {
   }
 });
 
-// ============================================================================
-// GET /v1/stats/:group_id - Statistik gcast per grup
-// ============================================================================
+// GET /v1/stats/:group_id
 router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
   try {
     const db = getDb();
@@ -323,7 +297,6 @@ router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - daysNum);
     
-    // Query logs dengan index composite (pastikan index sudah dibuat di Firebase Console)
     const logsSnapshot = await withRetry(
       () => db.collection('logs')
         .where('group_id', '==', group_id)

@@ -1,26 +1,32 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "api/index.js",
-        "use": "@vercel/node",
-        "config": {
-          "buildCommand": "bash vercel-build.sh",
-          "maxDuration": 10
-        }
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 10,
+        "includeFiles": "src/**"
       }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/api/index.js"
-      }
-    ],
-    "env": {
-      "NODE_ENV": "production",
-      "VERCEL": "1"
-    },
-    "github": {
-      "silent": true
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.js",
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,x-api-key"
+      }
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "VERCEL": "1"
+  },
+  "github": {
+    "silent": true
   }
+}

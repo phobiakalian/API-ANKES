@@ -1,7 +1,6 @@
-// src/logger.js - Structured logging dengan Pino (serverless-safe version)
+// src/logger.js - Structured logging dengan Pino (serverless-safe)
 const pino = require('pino');
 
-// Deteksi environment
 const isProduction = process.env.NODE_ENV === 'production';
 const isVercel = process.env.VERCEL === '1';
 
@@ -15,7 +14,7 @@ const transportConfig = !isProduction && !isVercel
         ignore: 'pid,hostname'
       }
     }
-  : undefined; // Production: gunakan JSON logging (default)
+  : undefined;
 
 const logger = pino({
   level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
@@ -28,7 +27,6 @@ const logger = pino({
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   },
-  // Optimasi untuk serverless: reduce overhead
   timestamp: pino.stdTimeFunctions.isoTime,
   messageKey: 'msg',
   nestedKey: 'payload'

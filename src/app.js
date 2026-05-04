@@ -1,3 +1,4 @@
+// src/app.js - Express app definition (reusable untuk local & Vercel)
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +10,7 @@ const logger = require('./logger');
 
 const app = express();
 
+// Inisialisasi Firebase (lazy load untuk Vercel)
 let dbInitialized = false;
 async function ensureDb() {
   if (!dbInitialized) {
@@ -23,6 +25,7 @@ async function ensureDb() {
   }
 }
 
+// Middleware keamanan & parsing
 app.use(helmet());
 app.use(cors({ 
   origin: process.env.NODE_ENV === 'production' 
@@ -57,7 +60,7 @@ app.use((req, res, next) => {
 // Routing API
 app.use('/v1', routes);
 
-// Health check endpoint (dengan Firestore test)
+// Health check endpoint
 app.get('/health', async (req, res) => {
   try {
     await ensureDb();

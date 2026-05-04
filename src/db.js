@@ -1,4 +1,4 @@
-// src/db.js - Enhanced dengan debug logging
+// src/db.js
 const admin = require('firebase-admin');
 const fs = require('fs');
 const logger = require('./logger');
@@ -16,7 +16,6 @@ async function getDb() {
   initializing = true;
   
   try {
-    // 🔍 DEBUG: Environment check
     logger.info('🔍 Firebase init started', {
       hasJsonEnv: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
       hasPathEnv: !!process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
@@ -34,7 +33,6 @@ async function getDb() {
           logger.info('🔑 Parsing FIREBASE_SERVICE_ACCOUNT_JSON...');
           const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
           
-          // 🔍 DEBUG: Log safe credential info
           logger.info('✅ Parsed service account', {
             project_id: serviceAccount.project_id,
             client_email: serviceAccount.client_email,
@@ -52,16 +50,23 @@ async function getDb() {
           throw new Error(`Invalid FIREBASE_SERVICE_ACCOUNT_JSON: ${parseError.message}`);
         }
       } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
-        // ... (kode path fallback tetap)
-        const serviceAccount = JSON.parse(fs.readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH, 'utf8'));
-        credential = admin.credential.cert(serviceAccount);
+        try {
+          const serviceAccount = JSON.parse(fs.readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH, 'utf8'));
+          credential = admin.credential.cert(serviceAccount);
+          logger.info(`✅ Firebase initialized from file: ${process.env.FIREBASE_SERVICE_ACCOUNT_PATH}`);
+        } catch (e) {
+          logger.error('❌ Error reading Firebase service account file:', e.message);
+          throw new Error(`Invalid FIREBASE_SERVICE_ACCOUNT_PATH: ${e.message}`);
+        }
       } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
         credential = admin.credential.applicationDefault();
+        logger.info('✅ Firebase initialized with application default credentials');
       } else {
-        throw new Error('Missing Firebase credentials');
+        const errorMsg = 'Missing Firebase credentials';
+        logger.error(errorMsg);
+        throw new Error(errorMsg);
       }
       
-      // 🔍 DEBUG: Initialize app
       logger.info('🚀 Calling admin.initializeApp...');
       admin.initializeApp({ 
         credential,
@@ -76,7 +81,6 @@ async function getDb() {
       preferRest: process.env.VERCEL === '1'
     });
     
-    // 🔍 DEBUG: Test connection
     logger.info('🔍 Testing Firestore connection...');
     await dbInstance.collection('_health_check').doc('ping').get();
     logger.info('✅ Firestore connection verified');
@@ -84,7 +88,6 @@ async function getDb() {
     return dbInstance;
     
   } catch (error) {
-    // 🔍 DEBUG: Log full error context
     logger.error('❌ Firebase init FAILED', {
       message: error.message,
       code: error.code,
