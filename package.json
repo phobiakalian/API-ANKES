@@ -1,54 +1,20 @@
 {
-  "name": "@phobiakalian/ankes-api",
+  "name": "ankes-api-minimal",
   "version": "1.0.0",
-  "description": "Anti-spam API for Telegram groups - detects and blocks broadcast/gcast messages",
-  "main": "src/index.js",
+  "description": "Minimal Ankes API for Vercel",
+  "main": "api/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "vercel-build": "echo 'Vercel build complete'",
-    "cleanup-logs": "node scripts/cleanup-logs.js",
-    "health-check": "node scripts/health-check.js"
-  },
-  "keywords": [
-    "telegram",
-    "anti-spam",
-    "gcast",
-    "moderation",
-    "api",
-    "firebase",
-    "express"
-  ],
-  "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com",
-    "url": "https://github.com/phobiakalian"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/phobiakalian/API-ANKES.git"
-  },
-  "bugs": {
-    "url": "https://github.com/phobiakalian/API-ANKES/issues"
-  },
-  "homepage": "https://github.com/phobiakalian/API-ANKES#readme",
-  "engines": {
-    "node": ">=16.0.0"
+    "start": "node api/index.js",
+    "vercel-build": "echo 'Build complete'"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.2.0",
-    "firebase-admin": "^13.8.0",
-    "helmet": "^7.1.0",
-    "pino": "^8.20.0",
-    "pino-pretty": "^10.3.1",
-    "zod": "^3.23.8"
+    "firebase-admin": "^12.0.0",
+    "helmet": "^7.1.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
