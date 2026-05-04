@@ -1,5 +1,5 @@
 {
-  "name": "@phobiakalian/API-ANKES",
+  "name": "@phobiakalian/ankes-api",
   "version": "1.0.0",
   "description": "Anti-spam API for Telegram groups - detects and blocks broadcast/gcast messages",
   "main": "src/index.js",
