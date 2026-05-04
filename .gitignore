@@ -18,14 +18,8 @@ yarn-error.log*
 pino-*.log
 
 # Runtime
-.pid
 *.pid
-*.seed
 *.pid.lock
-
-# Coverage
-coverage/
-.nyc_output/
 
 # IDE
 .idea/
@@ -47,12 +41,9 @@ build/
 *.test.js
 *.spec.js
 
-# Firebase (SENSITIVE - never commit)
+# Firebase (SENSITIVE)
 firebase-service-account.json
 *-firebase-adminsdk-*.json
 
 # Vercel
 .vercel/
-
-# Optional IDE configs
-*.code-workspace
