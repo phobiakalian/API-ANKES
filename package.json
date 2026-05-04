@@ -11,7 +11,15 @@
     "cleanup-logs": "node scripts/cleanup-logs.js",
     "health-check": "node scripts/health-check.js"
   },
-  "keywords": ["telegram", "anti-spam", "gcast", "moderation", "api", "firebase", "express"],
+  "keywords": [
+    "telegram",
+    "anti-spam",
+    "gcast",
+    "moderation",
+    "api",
+    "firebase",
+    "express"
+  ],
   "author": {
     "name": "Your Name",
     "email": "your.email@example.com",
@@ -34,7 +42,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.2.0",
-    "firebase-admin": "^10.1.0",
+    "firebase-admin": "^13.8.0",
     "helmet": "^7.1.0",
     "pino": "^8.20.0",
     "pino-pretty": "^10.3.1",
