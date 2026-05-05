@@ -1,3 +1,4 @@
+// src/db.js
 const admin = require('firebase-admin');
 const logger = require('./logger');
 
@@ -54,3 +55,4 @@ async function getDb() {
 }
 
 module.exports = { getDb, admin };
+

@@ -1,3 +1,4 @@
+// src/cache.js
 const logger = require('./logger');
 
 const TTL = parseInt(process.env.CACHE_TTL_MS) || 5 * 60 * 1000; // 5 menit default
@@ -30,3 +31,4 @@ function del(key) {
 }
 
 module.exports = { set, get, del };
+

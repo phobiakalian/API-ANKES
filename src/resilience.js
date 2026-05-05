@@ -1,3 +1,5 @@
+// src/resilience.js
+
 const logger = require('./logger');
 
 const RETRY_CONFIG = { retries: 3, minTimeout: 100, maxTimeout: 1000, factor: 2 };
@@ -25,3 +27,4 @@ async function withRetry(operation, label, config = {}) {
 }
 
 module.exports = { withRetry };
+

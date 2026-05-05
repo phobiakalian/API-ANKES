@@ -1,3 +1,4 @@
+// src/middleware.js
 const { z } = require('zod');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('./logger');
@@ -67,3 +68,4 @@ const addRequestId = (req, res, next) => {
 };
 
 module.exports = { verifyApiKey, validate, analyzeSchema, configSchema, sanitizeInput, addRequestId };
+

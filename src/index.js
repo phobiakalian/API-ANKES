@@ -1,3 +1,4 @@
+// src/index.js
 const { app } = require('./app');
 const logger = require('./logger');
 const { getDb } = require('./db');
@@ -20,3 +21,4 @@ async function startServer() {
 }
 
 startServer();
+

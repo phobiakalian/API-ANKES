@@ -1,3 +1,4 @@
+// src/utils/response.js
 /**
  * Helper untuk response yang konsisten
  * Semua endpoint akan mengembalikan format:
@@ -19,3 +20,5 @@ exports.sendSuccess = (res, data = null, message = "Success", statusCode = 200) 
       details // Hanya tampil details jika ada, bisa di-hide di production jika mau
     });
   };
+
+  

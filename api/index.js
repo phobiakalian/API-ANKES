@@ -1,3 +1,4 @@
+// api/index.js
 const { app } = require('../src/app');
 const logger = require('../src/logger');
 
@@ -27,3 +28,4 @@ module.exports = async (req, res) => {
     clearTimeout(timeout);
   }
 };
+

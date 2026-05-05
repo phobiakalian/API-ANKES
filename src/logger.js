@@ -1,3 +1,5 @@
+// src/logger.js
+
 const pino = require('pino');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -30,3 +32,4 @@ logger.errorWithStack = (err, context = {}) => {
 };
 
 module.exports = logger;
+

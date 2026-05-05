@@ -1,3 +1,4 @@
+// src/routes.js
 const express = require('express');
 const router = express.Router();
 const { getDb, admin } = require('./db');
@@ -14,7 +15,7 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
   const { group_id, user_id, text } = req.validatedBody;
 
   try {
-    const db = getDb();
+    const db = await getDb();
 
     // 1. Cek whitelist
     const whitelistDoc = await withRetry(
@@ -70,7 +71,7 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
 // GET /v1/stats/:group_id (DIPERBAIKI: Handle Missing Index)
 router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const { group_id } = req.params;
     const { days = 7 } = req.query;
     const daysNum = Math.min(parseInt(days) || 7, 30);
@@ -145,7 +146,7 @@ router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
 // POST /v1/config/:group_id
 router.post('/config/:group_id', verifyApiKey, validate(configSchema), async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const groupId = req.params.group_id;
     const update = Object.fromEntries(Object.entries(req.validatedBody).filter(([_, v]) => v !== undefined));
   
@@ -167,7 +168,7 @@ router.post('/config/:group_id', verifyApiKey, validate(configSchema), async (re
 // POST /v1/whitelist/:group_id/:user_id
 router.post('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const { group_id, user_id } = req.params;
     await withRetry(() => db.collection('whitelist').doc(user_id).set({
       group_id, user_id, added_at: admin.firestore.FieldValue.serverTimestamp()
@@ -181,7 +182,7 @@ router.post('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) => {
 // DELETE /v1/whitelist/:group_id/:user_id
 router.delete('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     await withRetry(() => db.collection('whitelist').doc(req.params.user_id).delete(), 'whitelist_delete');
     return sendSuccess(res, { user_id: req.params.user_id }, "User removed from whitelist");
   } catch (err) {
@@ -192,7 +193,7 @@ router.delete('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) =>
 // POST /v1/blacklist/:group_id
 router.post('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const { word } = req.body;
     const groupId = req.params.group_id;
     if (!word || typeof word !== 'string' || word.length < 2) return sendError(res, "Invalid word", 400);
@@ -212,7 +213,7 @@ router.post('/blacklist/:group_id', verifyApiKey, async (req, res) => {
 // DELETE /v1/blacklist/:group_id
 router.delete('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const { word } = req.body;
     if (!word) return sendError(res, "Word is required", 400);
     
@@ -231,7 +232,7 @@ router.delete('/blacklist/:group_id', verifyApiKey, async (req, res) => {
 // GET /v1/blacklist/:group_id
 router.get('/blacklist/:group_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const doc = await withRetry(() => db.collection('blacklists').doc(req.params.group_id).get(), 'blacklist_get');
     const data = doc.exists ? doc.data() : { words: [] };
     return sendSuccess(res, { group_id: req.params.group_id, words: data.words || [], updated_at: data.updated_at });
@@ -243,7 +244,7 @@ router.get('/blacklist/:group_id', verifyApiKey, async (req, res) => {
 // GET /v1/summary/:group_id
 router.get('/summary/:group_id', verifyApiKey, async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const groupId = req.params.group_id;
     const [configDoc, blacklistDoc] = await Promise.all([
       withRetry(() => db.collection('configs').doc(groupId).get(), 'summary_config'),
@@ -264,3 +265,4 @@ router.get('/summary/:group_id', verifyApiKey, async (req, res) => {
 });
 
 module.exports = router;
+

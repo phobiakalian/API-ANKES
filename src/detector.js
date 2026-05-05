@@ -1,3 +1,5 @@
+// src/detector.js
+
 /**
  * Menganalisis teks untuk mendeteksi pola spam/gcast
  */
@@ -72,3 +74,4 @@ function analyzeAsciiPattern(text, threshold = 0.65, expert = false, blacklist =
 }
 
 module.exports = { analyzeAsciiPattern };
+
