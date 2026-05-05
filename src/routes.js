@@ -69,9 +69,10 @@ router.post('/analyze', verifyApiKey, validate(analyzeSchema), async (req, res) 
 });
 
 // GET /v1/stats/:group_id (DIPERBAIKI: Handle Missing Index)
+// src/routes.js - GET /v1/stats/:group_id (FIXED)
 router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
   try {
-    const db = await getDb();
+    const db = await getDb(); // ✅ FIX 1: Tambah await
     const { group_id } = req.params;
     const { days = 7 } = req.query;
     const daysNum = Math.min(parseInt(days) || 7, 30);
@@ -93,7 +94,6 @@ router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
         'stats_query'
       );
     } catch (queryError) {
-      // DETEKSI ERROR INDEX
       if (queryError.message && queryError.message.includes('The query requires an index')) {
         logger.error({ group_id, err: queryError.message }, 'Missing Firestore Index');
         return sendError(res, "Configuration Error: Missing Firestore Index. Please check logs.", 500);
@@ -103,38 +103,57 @@ router.get('/stats/:group_id', verifyApiKey, async (req, res) => {
 
     if (logsSnapshot.empty) {
       return sendSuccess(res, {
-        group_id, period: { from: fromDate.toISOString(), to: toDate.toISOString() },
-        summary: { total_messages: 0, gcast_detected: 0, block_rate: 0 }, top_reasons: [], recent_logs: []
+        group_id, 
+        period: { from: fromDate.toISOString(), to: toDate.toISOString() },
+        summary: { total_messages: 0, gcast_detected: 0, block_rate: 0 }, 
+        top_reasons: [], 
+        recent_logs: []
       });
     }
 
     let totalMessages = 0, gcastDetected = 0;
-    const reasonCounts = {}, recentLogs = [];
+    const reasonCounts = {};
+    const recentLogs = []; // ✅ FIX 2: Inisialisasi array
 
     logsSnapshot.forEach(doc => {
       const log = doc.data();
       totalMessages++;
       if (log.is_gcast) {
         gcastDetected++;
-        if (Array.isArray(log.reason)) log.reason.forEach(r => reasonCounts[r] = (reasonCounts[r] || 0) + 1);
+        if (Array.isArray(log.reason)) {
+          log.reason.forEach(r => reasonCounts[r] = (reasonCounts[r] || 0) + 1);
+        }
       }
       if (recentLogs.length < 10) {
         recentLogs.push({
           timestamp: log.timestamp?.toDate?.() || log.timestamp,
-          user_id: log.user_id, score: log.score, reason: log.reason
+          user_id: log.user_id, 
+          score: log.score, 
+          reason: log.reason
         });
       }
     });
 
-    const blockRate = totalMessages > 0 ? ((gcastDetected / totalMessages) * 100).toFixed(2) : 0;
+    const blockRate = totalMessages > 0 
+      ? ((gcastDetected / totalMessages) * 100).toFixed(2) 
+      : 0;
+    
     const topReasons = Object.entries(reasonCounts)
-      .sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
       .map(([reason, count]) => ({ reason, count }));
 
+    // ✅ FIX 3: Rename camelCase → snake_case saat return
     return sendSuccess(res, {
-      group_id, period: { from: fromDate.toISOString(), to: toDate.toISOString() },
-      summary: { total_messages: totalMessages, gcast_detected: gcastDetected, block_rate: parseFloat(blockRate) },
-      top_reasons, recent_logs
+      group_id, 
+      period: { from: fromDate.toISOString(), to: toDate.toISOString() },
+      summary: { 
+        total_messages: totalMessages, 
+        gcast_detected: gcastDetected, 
+        block_rate: parseFloat(blockRate) 
+      },
+      top_reasons: topReasons,    // ✅ rename
+      recent_logs: recentLogs     // ✅ rename
     });
 
   } catch (err) {
