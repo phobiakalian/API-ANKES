@@ -184,6 +184,20 @@ router.post('/config/:group_id', verifyApiKey, validate(configSchema), async (re
   }
 });
 
+// GET /v1/whitelist/:group_id
+router.get('/whitelist/:group_id', verifyApiKey, async (req, res) => {
+  try {
+    const db = await getDb();
+    const snapshot = await db.collection('whitelist')
+      .where('group_id', '==', req.params.group_id)
+      .get();
+    const users = snapshot.docs.map(doc => doc.data().user_id);
+    return sendSuccess(res, { group_id: req.params.group_id, users });
+  } catch (err) {
+    return sendError(res, "Failed to fetch whitelist");
+  }
+});
+
 // POST /v1/whitelist/:group_id/:user_id
 router.post('/whitelist/:group_id/:user_id', verifyApiKey, async (req, res) => {
   try {
