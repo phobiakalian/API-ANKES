@@ -1,4 +1,3 @@
-// src/logger.js
 const pino = require('pino');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -12,13 +11,22 @@ const logger = pino({
   level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
   transport: transportConfig,
   formatters: { level: (label) => ({ level: label.toUpperCase() }) },
-  base: { service: 'ankes-api', version: '1.0.0', environment: process.env.NODE_ENV || 'development' },
+  base: { service: 'ankes-api', version: '1.1.0' },
   timestamp: pino.stdTimeFunctions.isoTime,
   messageKey: 'msg'
 });
 
+// Helper khusus untuk logging error beserta stack trace
 logger.errorWithStack = (err, context = {}) => {
-  logger.error({ ...context, err: { message: err.message, stack: err.stack, name: err.name, code: err.code } }, 'Error occurred');
+  logger.error({ 
+    ...context, 
+    err: { 
+      message: err.message, 
+      stack: err.stack, 
+      name: err.name, 
+      code: err.code 
+    } 
+  }, 'Error occurred');
 };
 
 module.exports = logger;

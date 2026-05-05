@@ -1,34 +1,37 @@
-// src/middleware.js
 const { z } = require('zod');
+const { v4: uuidv4 } = require('uuid');
 const logger = require('./logger');
+const { sendError } = require('./utils/response');
 
+// Input Sanitization
 const sanitizeInput = (str) => {
   if (typeof str !== 'string') return str;
   return str
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Hapus control chars
     .substring(0, 4000);
 };
 
+// Verify API Key
 const verifyApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
   
   if (!apiKey) {
-    logger.warn({ path: req.path, ip: req.ip }, 'Missing API key');
-    return res.status(401).json({ error: "Missing API Key" });
+    return sendError(res, "Missing API Key. Provide 'x-api-key' in header.", 401);
   }
   
   if (apiKey !== process.env.API_KEY) {
-    logger.warn({ path: req.path, ip: req.ip }, 'Invalid API key attempt');
-    return res.status(401).json({ error: "Invalid API Key" });
+    logger.warn({ ip: req.ip, path: req.path }, 'Invalid API Key attempt');
+    return sendError(res, "Invalid API Key.", 401);
   }
   
   next();
 };
 
+// Schemas
 const analyzeSchema = z.object({
-  group_id: z.string().min(1, "group_id required").max(100),
-  user_id: z.string().min(1, "user_id required").max(100),
-  text: z.string().min(1, "text required").max(4000)
+  group_id: z.string().min(1).max(100),
+  user_id: z.string().min(1).max(100),
+  text: z.string().min(1).max(4000)
 });
 
 const configSchema = z.object({
@@ -39,6 +42,7 @@ const configSchema = z.object({
   logging_level: z.enum(['none', 'gcast_only', 'links_only', 'all']).optional()
 });
 
+// Validation Middleware
 const validate = (schema) => (req, res, next) => {
   if (req.body?.text) req.body.text = sanitizeInput(req.body.text);
   if (req.body?.group_id) req.body.group_id = sanitizeInput(req.body.group_id);
@@ -47,19 +51,19 @@ const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);
   
   if (!result.success) {
-    logger.warn({ 
-      path: req.path, 
-      errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
-    }, 'Validation failed');
-    
-    return res.status(400).json({ 
-      error: "Invalid payload", 
-      details: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
-    });
+    const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+    return sendError(res, "Invalid input data", 400, errors);
   }
   
   req.validatedBody = result.data;
   next();
 };
 
-module.exports = { verifyApiKey, validate, analyzeSchema, configSchema, sanitizeInput };
+// Tambahkan Request ID unik untuk setiap request
+const addRequestId = (req, res, next) => {
+  req.id = req.headers['x-request-id'] || uuidv4();
+  res.setHeader('x-request-id', req.id);
+  next();
+};
+
+module.exports = { verifyApiKey, validate, analyzeSchema, configSchema, sanitizeInput, addRequestId };

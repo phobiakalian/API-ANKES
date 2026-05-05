@@ -1,4 +1,3 @@
-// src/detector.js
 /**
  * Menganalisis teks untuk mendeteksi pola spam/gcast
  */
@@ -22,7 +21,7 @@ function analyzeAsciiPattern(text, threshold = 0.65, expert = false, blacklist =
     }
   }
 
-  // 2. CEK LINK
+  // 2. CEK LINK (Keras)
   const urlPattern = /(https?:\/\/|t\.me\/|www\.)\S+/gi;
   if (urlPattern.test(trimmed)) {
     return {
